@@ -1,0 +1,15 @@
+# Local secret variable assignments (Contains your live API tokens)
+*.tfvars
+*.tfvars.json
+
+# Local Terraform execution cache and plugin binaries
+.terraform/
+.terraform.lock.hcl
+
+# Local state tracking files (Can contain plain-text parsed secrets)
+*.tfstate
+*.tfstate.*
+
+# Crash logs and developer overrides
+crash.log
+*.tfplan
