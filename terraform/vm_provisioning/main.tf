@@ -23,11 +23,22 @@ provider "proxmox" {
   endpoint  = var.proxmox_endpoint
   insecure  = true
   api_token = var.proxmox_api_token
+
+  # ADD THIS BLOCK FOR FILE UPLOADS TO WORK:
+  ssh {
+    agent    = true   # Tells Terraform to read your local Fedora ssh-agent
+    username = "root" # The host OS user on your Proxmox machine
+    node {
+      name    = "mothership"
+      address = var.proxmox_host_ip
+    }
+  }
 }
 
 resource "proxmox_virtual_environment_vm" "k3s_control" {
   name        = "k3s-control-01"
   description = "Lightweight K3s Kubernetes Control Node - the 'brains'"
+  tags        = ["Kubernetes", "K3s", "manager"]
   node_name   = "mothership"
   vm_id       = 100
 
