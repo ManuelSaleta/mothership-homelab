@@ -23,7 +23,7 @@ resource "proxmox_virtual_environment_file" "k3s_worker_cloud_config" {
           - ${file("/home/gman/.ssh/id_ed25519.pub")}
     
     runcmd:
-      - until ping -c 1 192.168.50.1; do sleep 1; done
+      - until ping -c 1 ${var.default_gateway}; do sleep 1; done
       # 1. Hardcode the environment variable directly so the service never gets confused
       - echo 'K3S_NODE_NAME="k3s-worker-0${count.index + 1}"' > /etc/systemd/system/k3s-agent.service.env
       # 2. Hardcode the installer flag directly
