@@ -84,13 +84,57 @@ sudo cat /var/lib/rancher/k3s/server/node-token
 SSH into your worker node and run the registration command wrapper. Ensure you substitute the correct token value and target node hostname matching your topography:
 
 ```bash
-# Example for k3s-worker-01
+# 1. Check service status on manager node
+sudo systemctl status k3s
+
+# 2. If disabled, enable it
+sudo systemctl enable k3s.service
+
+# 3. Get K3s token
+# (This is the token value you will copy back to your Fedora workstation's terraform.tfvars file so your actual worker VMs can connect).
+sudo cat /var/lib/rancher/k3s/server/node-token
+```
+
+```bash
+# Head over to your worker nodes; paste the following with the above token, and the IP of your manager VM.
 curl -sfL https://get.k3s.io | \
   K3S_URL="https://192.168.50.72:6443" \
   K3S_TOKEN="YOUR_FRESHLY_EXTRACTED_SERVER_TOKEN" \
   INSTALL_K3S_SKIP_DOWNLOAD=true \
   INSTALL_K3S_EXEC="agent --node-name=k3s-worker-01" sh -
 
+```
+
+```bash
+# Check the status of the k3s instance from the control node. (whiled ssh'd into that control-01)
+# Check service health
+sudo systemctl status k3s
+
+# Check if port 6443 is actively bound
+sudo ss -tlnp | grep 6443
+```
+
+### Troubleshooting
+
+If everything is working from your control node, you should see.
+
+```bash
+gman@k3s-control-01:~$ sudo k3s kubectl get nodes
+NAME             STATUS   ROLES           AGE   VERSION
+k3s-control-01   Ready    control-plane   24m   v1.35.5+k3s1
+k3s-worker-01    Ready    <none>          16m   v1.35.5+k3s1
+k3s-worker-02    Ready    <none>          15s   v1.35.5+k3s1
+```
+
+Now from your workstation, if you copied over the .config files, updated the IP.
+You should see something like this. The manager/control plane and the workers.
+
+```bash
+➜  ~ kubectl get nodes -o wide
+NAME             STATUS   ROLES           AGE    VERSION        INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+k3s-control-01   Ready    control-plane   27m    v1.35.5+k3s1   192.168.50.184   <none>        Ubuntu 24.04.4 LTS   6.8.0-117-generic   containerd://2.2.3-k3s1
+k3s-worker-01    Ready    <none>          19m    v1.35.5+k3s1   192.168.50.210   <none>        Ubuntu 24.04.4 LTS   6.8.0-117-generic   containerd://2.2.3-k3s1
+k3s-worker-02    Ready    <none>          3m4s   v1.35.5+k3s1   192.168.50.211   <none>        Ubuntu 24.04.4 LTS   6.8.0-117-generic   containerd://2.2.3-k3s1
 ```
 
 #### Force Service Sync & Restart
@@ -104,6 +148,7 @@ sudo systemctl restart k3s-agent
 ```
 
 ---
+
 
 ### 2. Post-Deployment Verification & Debugging Loop
 
@@ -128,6 +173,8 @@ Retrieve extended metadata to check pod-to-node routing assignments and target o
 kubectl get pods -o wide
 
 ```
+
+#### Additional commands.
 
 > 💡 **Networking Note:** Pod IP allocations (e.g., `10.42.0.X`) exist strictly within the cluster's internal overlay network fabric. Your local workstation cannot route traffic directly to these endpoints without an active proxy or Ingress gateway controller.
 
